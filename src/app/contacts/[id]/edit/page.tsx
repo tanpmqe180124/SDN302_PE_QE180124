@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Contact } from '@/lib/types';
 
 export default function EditContactPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const resolvedParams = React.use(params);
   const [contact, setContact] = useState<Contact | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -20,38 +19,43 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchContact(resolvedParams.id);
-  }, [resolvedParams.id, fetchContact]);
-
-  const fetchContact = async (contactId: string) => {
-    try {
-      const response = await fetch(`/api/contacts/${contactId}`);
-      if (response.ok) {
-        const text = await response.text();
-        if (!text) {
-          throw new Error('Empty response from server');
+    const fetchContact = async (contactId: string) => {
+      try {
+        const response = await fetch(`/api/contacts/${contactId}`);
+        if (response.ok) {
+          const text = await response.text();
+          if (!text) {
+            throw new Error('Empty response from server');
+          }
+          
+          const contactData = JSON.parse(text);
+          setContact(contactData);
+          setFormData({
+            name: contactData.name,
+            email: contactData.email,
+            phone: contactData.phone || '',
+            group: contactData.group || ''
+          });
+        } else {
+          alert('Contact not found');
+          router.push('/');
         }
-        
-        const contactData = JSON.parse(text);
-        setContact(contactData);
-        setFormData({
-          name: contactData.name,
-          email: contactData.email,
-          phone: contactData.phone || '',
-          group: contactData.group || ''
-        });
-      } else {
-        alert('Contact not found');
+      } catch (error) {
+        console.error('Error fetching contact:', error);
+        alert('Failed to load contact');
         router.push('/');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching contact:', error);
-      alert('Failed to load contact');
-      router.push('/');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    const loadContact = async () => {
+      const resolvedParams = await params;
+      fetchContact(resolvedParams.id);
+    };
+
+    loadContact();
+  }, [params, router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -83,6 +87,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
     setIsSubmitting(true);
 
     try {
+      const resolvedParams = await params;
       const response = await fetch(`/api/contacts/${resolvedParams.id}`, {
         method: 'PUT',
         headers: {
@@ -150,7 +155,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Contact not found</h3>
-          <p className="text-gray-600 mb-4">The contact you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-4">The contact you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             href="/"
             className="inline-flex items-center px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors duration-200"
@@ -176,7 +181,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Contact</h1>
-          <p className="text-gray-700">Update the information for {contact.name || 'this contact'}</p>
+          <p className="text-gray-700">Update the information for {contact.name || "this contact"}</p>
         </div>
 
         {/* Navigation */}
@@ -248,7 +253,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
                   className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter email address"
+                  placeholder="Enter contact's email address"
                 />
               </div>
               {errors.email && (
@@ -264,7 +269,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
             {/* Phone Field */}
             <div>
               <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                Phone Number <span className="text-gray-400 text-xs">(Optional)</span>
+                Phone Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -279,7 +284,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200"
-                  placeholder="Enter phone number"
+                  placeholder="Enter contact's phone number"
                 />
               </div>
             </div>
@@ -287,12 +292,12 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
             {/* Group Field */}
             <div>
               <label htmlFor="group" className="block text-sm font-semibold text-gray-700 mb-2">
-                Group <span className="text-gray-400 text-xs">(Optional)</span>
+                Group
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
                 <select
@@ -300,49 +305,42 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
                   name="group"
                   value={formData.group}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all duration-200 appearance-none bg-white"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all duration-200"
                 >
                   <option value="">Select a group</option>
-                  <option value="Friends">Friends</option>
-                  <option value="Family">Family</option>
-                  <option value="Work">Work</option>
-                  <option value="Other">Other</option>
+                  <option value="family">Family</option>
+                  <option value="friends">Friends</option>
+                  <option value="work">Work</option>
+                  <option value="other">Other</option>
                 </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
               </div>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4 pt-6">
+            {/* Submit Button */}
+            <div className="flex gap-4 pt-4">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 ease-in-out shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
               >
                 {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                     Updating...
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex items-center justify-center">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Update Contact
-                  </>
+                  </div>
                 )}
               </button>
+              
               <Link
                 href="/"
-                className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all duration-200 ease-in-out"
+                className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 text-center"
               >
                 Cancel
               </Link>
