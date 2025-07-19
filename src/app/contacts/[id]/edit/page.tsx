@@ -21,7 +21,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     fetchContact(resolvedParams.id);
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, fetchContact]);
 
   const fetchContact = async (contactId: string) => {
     try {
@@ -176,7 +176,7 @@ export default function EditContactPage({ params }: { params: Promise<{ id: stri
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Contact</h1>
-          <p className="text-gray-700">Update the information for {contact.name}</p>
+          <p className="text-gray-700">Update the information for {contact.name || 'this contact'}</p>
         </div>
 
         {/* Navigation */}
